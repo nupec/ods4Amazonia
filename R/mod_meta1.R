@@ -11,33 +11,34 @@ mod_meta1_ui <- function(id){
   ns <- NS(id)
   tagList(
     h1("Meta 1"),
-    fluidRow(
-      bs4Dash::bs4Card(
-        title = "Filtros",
-        width = 12,
-        fluidRow(
-          bs4Dash::bs4Card(
-          column(
-            width = 12,
-            selectInput(
-              inputId = ns("estado"),
-              label = "Selecione o estado",
-              choices = unique(sort(Meta1$nome_uf))
-              )
-            )),
-          bs4Dash::bs4Card(
-          column(
-            width = 12,
-            selectInput(
-              inputId = ns("municipio"),
-              label = "Selecione o município",
-              choices =  c("Carregando..." = "")
-            )
-          )
-          )
-        )
-        )
-      ),
+    mod_filtro_ui(ns("filtro_1")),
+    # fluidRow(
+    #   bs4Dash::bs4Card(
+    #     title = "Filtros",
+    #     width = 12,
+    #     fluidRow(
+    #       bs4Dash::bs4Card(
+    #       column(
+    #         width = 12,
+    #         selectInput(
+    #           inputId = ns("estado"),
+    #           label = "Selecione o estado",
+    #           choices = unique(sort(Meta1$nome_uf))
+    #           )
+    #         )),
+    #       bs4Dash::bs4Card(
+    #       column(
+    #         width = 12,
+    #         selectInput(
+    #           inputId = ns("municipio"),
+    #           label = "Selecione o município",
+    #           choices =  c("Carregando..." = "")
+    #         )
+    #       )
+    #       )
+    #     )
+    #     )
+    #   ),
 # ui da tabela --------------------------------------------------------------------------------
     fluidRow(
       column(
@@ -55,6 +56,8 @@ mod_meta1_ui <- function(id){
   mod_meta1_server <- function(id){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
+    
+    valores_do_filtro <-  mod_filtro_server("filtro_1")
 
 # "OBSERVE", necessário para a reatividade do filtro MUNICIPIO --------------------------------
 
@@ -76,8 +79,8 @@ mod_meta1_ui <- function(id){
 
       Meta1 |>
         dplyr::filter(
-          nome_uf        == input$estado,
-          nome_municipio == input$municipio) |>
+          nome_uf        == valores_do_filtro()$estado,
+          nome_municipio == valores_do_filtro()$municipio) |>
         dplyr::select(ano, indice1b, indice1a) |>
         reactable::reactable(
           striped = TRUE,
