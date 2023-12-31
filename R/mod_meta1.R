@@ -11,43 +11,55 @@ mod_meta1_ui <- function(id){
   ns <- NS(id)
   tagList(
     h1("Meta 1"),
-    mod_filtro_ui(ns("filtro_1")),
-    # fluidRow(
-    #   bs4Dash::bs4Card(
-    #     title = "Filtros",
-    #     width = 12,
-    #     fluidRow(
-    #       bs4Dash::bs4Card(
-    #       column(
-    #         width = 12,
-    #         selectInput(
-    #           inputId = ns("estado"),
-    #           label = "Selecione o estado",
-    #           choices = unique(sort(Meta1$nome_uf))
-    #           )
-    #         )),
-    #       bs4Dash::bs4Card(
-    #       column(
-    #         width = 12,
-    #         selectInput(
-    #           inputId = ns("municipio"),
-    #           label = "Selecione o município",
-    #           choices =  c("Carregando..." = "")
-    #         )
-    #       )
-    #       )
-    #     )
-    #     )
-    #   ),
+    hr(),
+    fluidRow(
+        bs4Dash::bs4Card(
+        title = "Filtros",
+        width = 12,
+        fluidRow(
+          column(
+            width = 6,
+            selectInput(
+              inputId = ns("estado"),
+              label = "Selecione o estado",
+              choices = unique(sort(Meta1$nome_uf)),
+              width = "90%"
+              )
+            ),
+          column(
+            width = 6,
+            selectInput(
+              inputId = ns("municipio"),
+              label = "Selecione o município",
+              choices =  c("Carregando..." = ""),
+              width = "90%"
+            )
+          )
+        )  
+      )
+  ), 
 # ui da tabela --------------------------------------------------------------------------------
     fluidRow(
       column(
-        width = 12,
+        width = 6,
         reactable::reactableOutput(ns("tabMeta1"))
-      )
-    )
-  )
+        ),
+        column(
+          width = 6,
+          echarts4r::echarts4rOutput(ns("grafMeta1"))  
+        )
 
+# ui gráficos ---------------------------------------------------------------------------------
+      # column(
+      # width = 6,
+      # leaflet::leafletOutput(ns("mapaIndice1b"))
+      # )
+    ),
+
+
+
+  )
+  
 }
 
 #' meta1 Server Functions
@@ -56,8 +68,6 @@ mod_meta1_ui <- function(id){
   mod_meta1_server <- function(id){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
-    
-    valores_do_filtro <-  mod_filtro_server("filtro_1")
 
 # "OBSERVE", necessário para a reatividade do filtro MUNICIPIO --------------------------------
 
@@ -74,28 +84,50 @@ mod_meta1_ui <- function(id){
       )
     })
 
-# outputs: Aqui uma tabela --------------------------------------------------------------------
+# outputs: ATabela Meta 1 --------------------------------------------------------------------
     output$tabMeta1 <- reactable::renderReactable({
 
-      Meta1 |>
+     Meta1 |>
         dplyr::filter(
-          nome_uf        == valores_do_filtro()$estado,
-          nome_municipio == valores_do_filtro()$municipio) |>
+          nome_uf        == input$estado,
+          nome_municipio == input$municipio) |>
         dplyr::select(ano, indice1b, indice1a) |>
         reactable::reactable(
           striped = TRUE,
-          searchable = TRUE,
-          filterable = TRUE,
+     #     searchable = TRUE,
+       #   filterable = TRUE,
           bordered = TRUE,
           highlight = TRUE,
           theme = reactable::reactableTheme(
           stripedColor ="#BDB76B"
-          )
+          ),
         )
-
-
     })
+    
+# output: Gráficos Meta 1 ---------------------------------------------------------------------
 
+    # output$mapaIndice1b <- plotly::renderPlotly({
+    #   
+    #   graf1b <- Meta1 |> 
+    #     dplyr::filter(nome_municipio == input$municipio) |> 
+    #     ggplot2::ggplot(ggplot2::aes(x=ano, y=indice1b)) +
+    #     ggplot2::geom_line() +
+    #     ggplot2::theme_minimal()
+    #     
+    #   plotly::ggplotly(graf1b)
+    #   
+    # })
+    
+    output$grafMeta1 <- echarts4r::renderEcharts4r({
+      
+      Meta1 |> 
+        dplyr::filter(nome_uf == input$estado,
+                      nome_municipio == input$municipio) |> 
+        echarts4r::e_charts(x = ano) |> 
+        echarts4r::e_line(serie = indice1b) |> 
+        echarts4r::e_line(serie = indice1a)
+      
+    })
   })
 }
 
